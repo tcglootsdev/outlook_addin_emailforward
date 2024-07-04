@@ -38,7 +38,7 @@
       <Hosts>
         <Host xsi:type="MailHost">
           <DesktopFormFactor>
-            <ExtensionPoint xsi:type="MessageComposeCommandSurface">
+            <ExtensionPoint xsi:type="MessageReadCommandSurface">
               <OfficeTab id="TabHome">
                 <Group id="CommandsGroup">
                   <Label resid="CommandsGroup.Label"/>
