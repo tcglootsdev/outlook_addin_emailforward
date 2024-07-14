@@ -7,21 +7,21 @@
 /* global console, localStorage, location, Office, window */
 
 import { LogLevel, PublicClientApplication } from "@azure/msal-browser";
-import { getUserData } from "./middle-tier-calls";
+import { getUserData, sendMail } from "./middle-tier-calls";
 import { showMessage } from "./message-helper";
 
-const clientId = "{application GUID here}"; //This is your client ID
+const clientId = "63001338-42ff-42a4-b355-557a81ed86ee"; //This is your client ID
 const accessScope = `api://${window.location.host}/${clientId}/access_as_user`;
 const loginRequest = {
   scopes: [accessScope],
-  extraScopesToConsent: ["user.read"],
+  extraScopesToConsent: ["user.read", "mail.send"],
 };
 
 const msalConfig = {
   auth: {
     clientId: clientId,
     authority: "https://login.microsoftonline.com/common",
-    redirectUri: "https://localhost:{PORT}/fallbackauthdialog.html", // Update config script to enable `https://${window.location.host}/fallbackauthdialog.html`,
+    redirectUri: "https://localhost:3000/fallbackauthdialog.html", // Update config script to enable `https://${window.location.host}/fallbackauthdialog.html`,
     navigateToLoginRequestUrl: false,
   },
   cache: {
@@ -58,6 +58,10 @@ const publicClientApp = new PublicClientApplication(msalConfig);
 let loginDialog = null;
 let homeAccountId = null;
 let callbackFunction = null;
+
+let recipient = null;
+let subject = null;
+let body = null;
 
 Office.onReady(() => {
   if (Office.context.ui.messageParent) {
@@ -100,12 +104,16 @@ function handleResponse(response) {
   }
 }
 
-export async function dialogFallback(callback) {
+export async function dialogFallback(callback, ...args) {
+  recipient = args[0];
+  subject = args[1];
+  body = args[2];
   // Attempt to acquire token silently if user is already signed in.
   if (homeAccountId !== null) {
     const result = await publicClientApp.acquireTokenSilent(loginRequest);
     if (result !== null && result.accessToken !== null) {
-      const response = await getUserData(result.accessToken);
+      // const response = await getUserData(result.accessToken);
+      const response = await sendMail(result.accessToken, recipient, subject, body);
       callbackFunction(response);
     }
   } else {
@@ -136,7 +144,8 @@ async function processMessage(arg) {
       publicClientApp.setActiveAccount(homeAccount);
     }
 
-    const response = await getUserData(messageFromDialog.result);
+    // const response = await getUserData(messageFromDialog.result);
+    const response = await sendMail(messageFromDialog.result, recipient, subject, body);
     callbackFunction(response);
   } else if (messageFromDialog.error === undefined && messageFromDialog.result.errorCode === undefined) {
     // Need to pick the user to use to auth

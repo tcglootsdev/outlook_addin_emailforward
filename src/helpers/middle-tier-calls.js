@@ -20,3 +20,23 @@ export async function getUserData(middletierToken) {
     throw err;
   }
 }
+
+export async function sendMail(middletierToken, recipient, subject, body) {
+  try {
+    const response = await $.ajax({
+      type: "POST",
+      url: `/sendmail`,
+      headers: { Authorization: "Bearer " + middletierToken },
+      data: {
+        recipient,
+        subject,
+        ...body,
+      },
+      cache: false,
+    });
+    return response;
+  } catch (err) {
+    showMessage(`Error from middle tier. \n${err.responseText || err.message}`);
+    throw err;
+  }
+}

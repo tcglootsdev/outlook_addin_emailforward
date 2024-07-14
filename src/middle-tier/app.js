@@ -14,7 +14,7 @@ import * as logger from "morgan";
 import express from "express";
 import https from "https";
 import { getHttpsServerOptions } from "office-addin-dev-certs";
-import { getUserData } from "./msgraph-helper";
+import { getUserData, sendMail } from "./msgraph-helper";
 import { validateJwt } from "./ssoauth-helper";
 
 /* global console, process, require, __dirname */
@@ -63,6 +63,7 @@ app.use("/", indexRouter);
 // });
 
 app.get("/getuserdata", validateJwt, getUserData);
+app.post("/sendmail", validateJwt, sendMail);
 
 // Get the client side task pane files requested
 app.get("/taskpane.html", async (req, res) => {

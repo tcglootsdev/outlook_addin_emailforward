@@ -21053,17 +21053,17 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 
 
-var clientId = "{application GUID here}"; //This is your client ID
+var clientId = "63001338-42ff-42a4-b355-557a81ed86ee"; //This is your client ID
 var accessScope = "api://".concat(window.location.host, "/").concat(clientId, "/access_as_user");
 var loginRequest = {
   scopes: [accessScope],
-  extraScopesToConsent: ["user.read"]
+  extraScopesToConsent: ["user.read", "mail.send"]
 };
 var msalConfig = {
   auth: {
     clientId: clientId,
     authority: "https://login.microsoftonline.com/common",
-    redirectUri: "https://localhost:{PORT}/fallbackauthdialog.html",
+    redirectUri: "https://localhost:3000/fallbackauthdialog.html",
     // Update config script to enable `https://${window.location.host}/fallbackauthdialog.html`,
     navigateToLoginRequestUrl: false
   },
@@ -21100,6 +21100,9 @@ var publicClientApp = new _azure_msal_browser__WEBPACK_IMPORTED_MODULE_3__.Publi
 var loginDialog = null;
 var homeAccountId = null;
 var callbackFunction = null;
+var recipient = null;
+var subject = null;
+var body = null;
 Office.onReady(function () {
   if (Office.context.ui.messageParent) {
     publicClientApp.handleRedirectPromise().then(handleResponse).catch(function (error) {
@@ -21149,37 +21152,44 @@ function dialogFallback(_x) {
 // and access token provider.
 function _dialogFallback() {
   _dialogFallback = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee(callback) {
-    var result, response, url;
+    var result,
+      response,
+      url,
+      _args = arguments;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
+          recipient = _args.length <= 1 ? undefined : _args[1];
+          subject = _args.length <= 2 ? undefined : _args[2];
+          body = _args.length <= 3 ? undefined : _args[3];
+          // Attempt to acquire token silently if user is already signed in.
           if (!(homeAccountId !== null)) {
-            _context.next = 11;
+            _context.next = 14;
             break;
           }
-          _context.next = 3;
+          _context.next = 6;
           return publicClientApp.acquireTokenSilent(loginRequest);
-        case 3:
+        case 6:
           result = _context.sent;
           if (!(result !== null && result.accessToken !== null)) {
-            _context.next = 9;
+            _context.next = 12;
             break;
           }
-          _context.next = 7;
-          return (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_0__.getUserData)(result.accessToken);
-        case 7:
+          _context.next = 10;
+          return (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_0__.sendMail)(result.accessToken, recipient, subject, body);
+        case 10:
           response = _context.sent;
           callbackFunction(response);
-        case 9:
-          _context.next = 14;
+        case 12:
+          _context.next = 17;
           break;
-        case 11:
+        case 14:
           callbackFunction = callback;
 
           // We fall back to Dialog API for any error.
           url = "/fallbackauthdialog.html";
           showLoginPopup(url);
-        case 14:
+        case 17:
         case "end":
           return _context.stop();
       }
@@ -21212,8 +21222,10 @@ function _processMessage() {
             homeAccountId = messageFromDialog.accountId; // Track the account id for future silent token requests.
             publicClientApp.setActiveAccount(homeAccount);
           }
+
+          // const response = await getUserData(messageFromDialog.result);
           _context2.next = 7;
-          return (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_0__.getUserData)(messageFromDialog.result);
+          return (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_0__.sendMail)(messageFromDialog.result, recipient, subject, body);
         case 7:
           response = _context2.sent;
           callbackFunction(response);
@@ -21299,12 +21311,18 @@ function hideMessage() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   getUserData: function() { return /* binding */ getUserData; }
+/* harmony export */   getUserData: function() { return /* binding */ getUserData; },
+/* harmony export */   sendMail: function() { return /* binding */ sendMail; }
 /* harmony export */ });
 /* harmony import */ var _message_helper__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./message-helper */ "./src/helpers/message-helper.js");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! jquery */ "./node_modules/jquery/dist/jquery.js");
 /* harmony import */ var jquery__WEBPACK_IMPORTED_MODULE_1___default = /*#__PURE__*/__webpack_require__.n(jquery__WEBPACK_IMPORTED_MODULE_1__);
 function _typeof(o) { "@babel/helpers - typeof"; return _typeof = "function" == typeof Symbol && "symbol" == typeof Symbol.iterator ? function (o) { return typeof o; } : function (o) { return o && "function" == typeof Symbol && o.constructor === Symbol && o !== Symbol.prototype ? "symbol" : typeof o; }, _typeof(o); }
+function ownKeys(e, r) { var t = Object.keys(e); if (Object.getOwnPropertySymbols) { var o = Object.getOwnPropertySymbols(e); r && (o = o.filter(function (r) { return Object.getOwnPropertyDescriptor(e, r).enumerable; })), t.push.apply(t, o); } return t; }
+function _objectSpread(e) { for (var r = 1; r < arguments.length; r++) { var t = null != arguments[r] ? arguments[r] : {}; r % 2 ? ownKeys(Object(t), !0).forEach(function (r) { _defineProperty(e, r, t[r]); }) : Object.getOwnPropertyDescriptors ? Object.defineProperties(e, Object.getOwnPropertyDescriptors(t)) : ownKeys(Object(t)).forEach(function (r) { Object.defineProperty(e, r, Object.getOwnPropertyDescriptor(t, r)); }); } return e; }
+function _defineProperty(e, r, t) { return (r = _toPropertyKey(r)) in e ? Object.defineProperty(e, r, { value: t, enumerable: !0, configurable: !0, writable: !0 }) : e[r] = t, e; }
+function _toPropertyKey(t) { var i = _toPrimitive(t, "string"); return "symbol" == _typeof(i) ? i : i + ""; }
+function _toPrimitive(t, r) { if ("object" != _typeof(t) || !t) return t; var e = t[Symbol.toPrimitive]; if (void 0 !== e) { var i = e.call(t, r || "default"); if ("object" != _typeof(i)) return i; throw new TypeError("@@toPrimitive must return a primitive value."); } return ("string" === r ? String : Number)(t); }
 function _regeneratorRuntime() { "use strict"; /*! regenerator-runtime -- Copyright (c) 2014-present, Facebook, Inc. -- license (MIT): https://github.com/facebook/regenerator/blob/main/LICENSE */ _regeneratorRuntime = function _regeneratorRuntime() { return e; }; var t, e = {}, r = Object.prototype, n = r.hasOwnProperty, o = Object.defineProperty || function (t, e, r) { t[e] = r.value; }, i = "function" == typeof Symbol ? Symbol : {}, a = i.iterator || "@@iterator", c = i.asyncIterator || "@@asyncIterator", u = i.toStringTag || "@@toStringTag"; function define(t, e, r) { return Object.defineProperty(t, e, { value: r, enumerable: !0, configurable: !0, writable: !0 }), t[e]; } try { define({}, ""); } catch (t) { define = function define(t, e, r) { return t[e] = r; }; } function wrap(t, e, r, n) { var i = e && e.prototype instanceof Generator ? e : Generator, a = Object.create(i.prototype), c = new Context(n || []); return o(a, "_invoke", { value: makeInvokeMethod(t, r, c) }), a; } function tryCatch(t, e, r) { try { return { type: "normal", arg: t.call(e, r) }; } catch (t) { return { type: "throw", arg: t }; } } e.wrap = wrap; var h = "suspendedStart", l = "suspendedYield", f = "executing", s = "completed", y = {}; function Generator() {} function GeneratorFunction() {} function GeneratorFunctionPrototype() {} var p = {}; define(p, a, function () { return this; }); var d = Object.getPrototypeOf, v = d && d(d(values([]))); v && v !== r && n.call(v, a) && (p = v); var g = GeneratorFunctionPrototype.prototype = Generator.prototype = Object.create(p); function defineIteratorMethods(t) { ["next", "throw", "return"].forEach(function (e) { define(t, e, function (t) { return this._invoke(e, t); }); }); } function AsyncIterator(t, e) { function invoke(r, o, i, a) { var c = tryCatch(t[r], t, o); if ("throw" !== c.type) { var u = c.arg, h = u.value; return h && "object" == _typeof(h) && n.call(h, "__await") ? e.resolve(h.__await).then(function (t) { invoke("next", t, i, a); }, function (t) { invoke("throw", t, i, a); }) : e.resolve(h).then(function (t) { u.value = t, i(u); }, function (t) { return invoke("throw", t, i, a); }); } a(c.arg); } var r; o(this, "_invoke", { value: function value(t, n) { function callInvokeWithMethodAndArg() { return new e(function (e, r) { invoke(t, n, e, r); }); } return r = r ? r.then(callInvokeWithMethodAndArg, callInvokeWithMethodAndArg) : callInvokeWithMethodAndArg(); } }); } function makeInvokeMethod(e, r, n) { var o = h; return function (i, a) { if (o === f) throw Error("Generator is already running"); if (o === s) { if ("throw" === i) throw a; return { value: t, done: !0 }; } for (n.method = i, n.arg = a;;) { var c = n.delegate; if (c) { var u = maybeInvokeDelegate(c, n); if (u) { if (u === y) continue; return u; } } if ("next" === n.method) n.sent = n._sent = n.arg;else if ("throw" === n.method) { if (o === h) throw o = s, n.arg; n.dispatchException(n.arg); } else "return" === n.method && n.abrupt("return", n.arg); o = f; var p = tryCatch(e, r, n); if ("normal" === p.type) { if (o = n.done ? s : l, p.arg === y) continue; return { value: p.arg, done: n.done }; } "throw" === p.type && (o = s, n.method = "throw", n.arg = p.arg); } }; } function maybeInvokeDelegate(e, r) { var n = r.method, o = e.iterator[n]; if (o === t) return r.delegate = null, "throw" === n && e.iterator.return && (r.method = "return", r.arg = t, maybeInvokeDelegate(e, r), "throw" === r.method) || "return" !== n && (r.method = "throw", r.arg = new TypeError("The iterator does not provide a '" + n + "' method")), y; var i = tryCatch(o, e.iterator, r.arg); if ("throw" === i.type) return r.method = "throw", r.arg = i.arg, r.delegate = null, y; var a = i.arg; return a ? a.done ? (r[e.resultName] = a.value, r.next = e.nextLoc, "return" !== r.method && (r.method = "next", r.arg = t), r.delegate = null, y) : a : (r.method = "throw", r.arg = new TypeError("iterator result is not an object"), r.delegate = null, y); } function pushTryEntry(t) { var e = { tryLoc: t[0] }; 1 in t && (e.catchLoc = t[1]), 2 in t && (e.finallyLoc = t[2], e.afterLoc = t[3]), this.tryEntries.push(e); } function resetTryEntry(t) { var e = t.completion || {}; e.type = "normal", delete e.arg, t.completion = e; } function Context(t) { this.tryEntries = [{ tryLoc: "root" }], t.forEach(pushTryEntry, this), this.reset(!0); } function values(e) { if (e || "" === e) { var r = e[a]; if (r) return r.call(e); if ("function" == typeof e.next) return e; if (!isNaN(e.length)) { var o = -1, i = function next() { for (; ++o < e.length;) if (n.call(e, o)) return next.value = e[o], next.done = !1, next; return next.value = t, next.done = !0, next; }; return i.next = i; } } throw new TypeError(_typeof(e) + " is not iterable"); } return GeneratorFunction.prototype = GeneratorFunctionPrototype, o(g, "constructor", { value: GeneratorFunctionPrototype, configurable: !0 }), o(GeneratorFunctionPrototype, "constructor", { value: GeneratorFunction, configurable: !0 }), GeneratorFunction.displayName = define(GeneratorFunctionPrototype, u, "GeneratorFunction"), e.isGeneratorFunction = function (t) { var e = "function" == typeof t && t.constructor; return !!e && (e === GeneratorFunction || "GeneratorFunction" === (e.displayName || e.name)); }, e.mark = function (t) { return Object.setPrototypeOf ? Object.setPrototypeOf(t, GeneratorFunctionPrototype) : (t.__proto__ = GeneratorFunctionPrototype, define(t, u, "GeneratorFunction")), t.prototype = Object.create(g), t; }, e.awrap = function (t) { return { __await: t }; }, defineIteratorMethods(AsyncIterator.prototype), define(AsyncIterator.prototype, c, function () { return this; }), e.AsyncIterator = AsyncIterator, e.async = function (t, r, n, o, i) { void 0 === i && (i = Promise); var a = new AsyncIterator(wrap(t, r, n, o), i); return e.isGeneratorFunction(r) ? a : a.next().then(function (t) { return t.done ? t.value : a.next(); }); }, defineIteratorMethods(g), define(g, u, "Generator"), define(g, a, function () { return this; }), define(g, "toString", function () { return "[object Generator]"; }), e.keys = function (t) { var e = Object(t), r = []; for (var n in e) r.push(n); return r.reverse(), function next() { for (; r.length;) { var t = r.pop(); if (t in e) return next.value = t, next.done = !1, next; } return next.done = !0, next; }; }, e.values = values, Context.prototype = { constructor: Context, reset: function reset(e) { if (this.prev = 0, this.next = 0, this.sent = this._sent = t, this.done = !1, this.delegate = null, this.method = "next", this.arg = t, this.tryEntries.forEach(resetTryEntry), !e) for (var r in this) "t" === r.charAt(0) && n.call(this, r) && !isNaN(+r.slice(1)) && (this[r] = t); }, stop: function stop() { this.done = !0; var t = this.tryEntries[0].completion; if ("throw" === t.type) throw t.arg; return this.rval; }, dispatchException: function dispatchException(e) { if (this.done) throw e; var r = this; function handle(n, o) { return a.type = "throw", a.arg = e, r.next = n, o && (r.method = "next", r.arg = t), !!o; } for (var o = this.tryEntries.length - 1; o >= 0; --o) { var i = this.tryEntries[o], a = i.completion; if ("root" === i.tryLoc) return handle("end"); if (i.tryLoc <= this.prev) { var c = n.call(i, "catchLoc"), u = n.call(i, "finallyLoc"); if (c && u) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } else if (c) { if (this.prev < i.catchLoc) return handle(i.catchLoc, !0); } else { if (!u) throw Error("try statement without catch or finally"); if (this.prev < i.finallyLoc) return handle(i.finallyLoc); } } } }, abrupt: function abrupt(t, e) { for (var r = this.tryEntries.length - 1; r >= 0; --r) { var o = this.tryEntries[r]; if (o.tryLoc <= this.prev && n.call(o, "finallyLoc") && this.prev < o.finallyLoc) { var i = o; break; } } i && ("break" === t || "continue" === t) && i.tryLoc <= e && e <= i.finallyLoc && (i = null); var a = i ? i.completion : {}; return a.type = t, a.arg = e, i ? (this.method = "next", this.next = i.finallyLoc, y) : this.complete(a); }, complete: function complete(t, e) { if ("throw" === t.type) throw t.arg; return "break" === t.type || "continue" === t.type ? this.next = t.arg : "return" === t.type ? (this.rval = this.arg = t.arg, this.method = "return", this.next = "end") : "normal" === t.type && e && (this.next = e), y; }, finish: function finish(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.finallyLoc === t) return this.complete(r.completion, r.afterLoc), resetTryEntry(r), y; } }, catch: function _catch(t) { for (var e = this.tryEntries.length - 1; e >= 0; --e) { var r = this.tryEntries[e]; if (r.tryLoc === t) { var n = r.completion; if ("throw" === n.type) { var o = n.arg; resetTryEntry(r); } return o; } } throw Error("illegal catch attempt"); }, delegateYield: function delegateYield(e, r, n) { return this.delegate = { iterator: values(e), resultName: r, nextLoc: n }, "next" === this.method && (this.arg = t), y; } }, e; }
 function asyncGeneratorStep(n, t, e, r, o, a, c) { try { var i = n[a](c), u = i.value; } catch (n) { return void e(n); } i.done ? t(u) : Promise.resolve(u).then(r, o); }
 function _asyncToGenerator(n) { return function () { var t = this, e = arguments; return new Promise(function (r, o) { var a = n.apply(t, e); function _next(n) { asyncGeneratorStep(a, r, o, _next, _throw, "next", n); } function _throw(n) { asyncGeneratorStep(a, r, o, _next, _throw, "throw", n); } _next(void 0); }); }; }
@@ -21350,6 +21368,45 @@ function _getUserData() {
   }));
   return _getUserData.apply(this, arguments);
 }
+function sendMail(_x2, _x3, _x4, _x5) {
+  return _sendMail.apply(this, arguments);
+}
+function _sendMail() {
+  _sendMail = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(middletierToken, recipient, subject, body) {
+    var response;
+    return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+      while (1) switch (_context2.prev = _context2.next) {
+        case 0:
+          _context2.prev = 0;
+          _context2.next = 3;
+          return jquery__WEBPACK_IMPORTED_MODULE_1__.ajax({
+            type: "POST",
+            url: "/sendmail",
+            headers: {
+              Authorization: "Bearer " + middletierToken
+            },
+            data: _objectSpread({
+              recipient: recipient,
+              subject: subject
+            }, body),
+            cache: false
+          });
+        case 3:
+          response = _context2.sent;
+          return _context2.abrupt("return", response);
+        case 7:
+          _context2.prev = 7;
+          _context2.t0 = _context2["catch"](0);
+          (0,_message_helper__WEBPACK_IMPORTED_MODULE_0__.showMessage)("Error from middle tier. \n".concat(_context2.t0.responseText || _context2.t0.message));
+          throw _context2.t0;
+        case 11:
+        case "end":
+          return _context2.stop();
+      }
+    }, _callee2, null, [[0, 7]]);
+  }));
+  return _sendMail.apply(this, arguments);
+}
 
 /***/ }),
 
@@ -21362,7 +21419,8 @@ function _getUserData() {
 "use strict";
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   getUserProfile: function() { return /* binding */ getUserProfile; }
+/* harmony export */   getUserProfile: function() { return /* binding */ getUserProfile; },
+/* harmony export */   sendMailAsUser: function() { return /* binding */ sendMailAsUser; }
 /* harmony export */ });
 /* harmony import */ var _fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./fallbackauthdialog.js */ "./src/helpers/fallbackauthdialog.js");
 /* harmony import */ var _middle_tier_calls__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./middle-tier-calls */ "./src/helpers/middle-tier-calls.js");
@@ -21385,6 +21443,9 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 /* global Office */
 
 var retryGetMiddletierToken = 0;
+var recipient = null;
+var subject = null;
+var body = null;
 function getUserProfile(_x) {
   return _getUserProfile.apply(this, arguments);
 }
@@ -21442,7 +21503,7 @@ function _getUserProfile() {
             break;
           }
           if ((0,_error_handler__WEBPACK_IMPORTED_MODULE_3__.handleClientSideErrors)(_context.t0)) {
-            (0,_fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__.dialogFallback)(callback);
+            (0,_fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__.dialogFallback)(callback, recipient, subject, body);
           }
           _context.next = 27;
           break;
@@ -21457,6 +21518,84 @@ function _getUserProfile() {
   }));
   return _getUserProfile.apply(this, arguments);
 }
+function sendMailAsUser(_x2) {
+  return _sendMailAsUser.apply(this, arguments);
+}
+function _sendMailAsUser() {
+  _sendMailAsUser = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee2(callback) {
+    var middletierToken,
+      response,
+      mfaMiddletierToken,
+      _args2 = arguments;
+    return _regeneratorRuntime().wrap(function _callee2$(_context2) {
+      while (1) switch (_context2.prev = _context2.next) {
+        case 0:
+          recipient = _args2.length <= 1 ? undefined : _args2[1];
+          subject = _args2.length <= 2 ? undefined : _args2[2];
+          body = _args2.length <= 3 ? undefined : _args2[3];
+          _context2.prev = 3;
+          _context2.next = 6;
+          return Office.auth.getAccessToken({
+            allowSignInPrompt: true,
+            allowConsentPrompt: true,
+            forMSGraphAccess: true
+          });
+        case 6:
+          middletierToken = _context2.sent;
+          _context2.next = 9;
+          return (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_1__.sendMail)(middletierToken, recipient, subject, body);
+        case 9:
+          response = _context2.sent;
+          if (response) {
+            _context2.next = 14;
+            break;
+          }
+          throw new Error("Middle tier didn't respond");
+        case 14:
+          if (!response.claims) {
+            _context2.next = 19;
+            break;
+          }
+          _context2.next = 17;
+          return Office.auth.getAccessToken({
+            authChallenge: response.claims
+          });
+        case 17:
+          mfaMiddletierToken = _context2.sent;
+          response = (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_1__.sendMail)(mfaMiddletierToken, recipient, subject, body);
+        case 19:
+          // AAD errors are returned to the client with HTTP code 200, so they do not trigger
+          // the catch block below.
+          if (response.error) {
+            handleAADErrors(response, callback);
+          } else {
+            callback(response);
+          }
+          _context2.next = 30;
+          break;
+        case 22:
+          _context2.prev = 22;
+          _context2.t0 = _context2["catch"](3);
+          if (!_context2.t0.code) {
+            _context2.next = 28;
+            break;
+          }
+          if ((0,_error_handler__WEBPACK_IMPORTED_MODULE_3__.handleClientSideErrors)(_context2.t0)) {
+            (0,_fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__.dialogFallback)(callback, recipient, subject, body);
+          }
+          _context2.next = 30;
+          break;
+        case 28:
+          (0,_message_helper__WEBPACK_IMPORTED_MODULE_2__.showMessage)("EXCEPTION: " + JSON.stringify(_context2.t0));
+          throw _context2.t0;
+        case 30:
+        case "end":
+          return _context2.stop();
+      }
+    }, _callee2, null, [[3, 22]]);
+  }));
+  return _sendMailAsUser.apply(this, arguments);
+}
 function handleAADErrors(response, callback) {
   // On rare occasions the middle tier token is unexpired when Office validates it,
   // but expires by the time it is sent to AAD for exchange. AAD will respond
@@ -21466,9 +21605,10 @@ function handleAADErrors(response, callback) {
 
   if (response.error_description.indexOf("AADSTS500133") !== -1 && retryGetMiddletierToken <= 0) {
     retryGetMiddletierToken++;
-    getUserProfile(callback);
+    // getUserProfile(callback);
+    (0,_middle_tier_calls__WEBPACK_IMPORTED_MODULE_1__.sendMail)(callback, recipient, subject, body);
   } else {
-    (0,_fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__.dialogFallback)(callback);
+    (0,_fallbackauthdialog_js__WEBPACK_IMPORTED_MODULE_0__.dialogFallback)(callback, recipient, subject, body);
   }
 }
 
@@ -32397,7 +32537,7 @@ var __webpack_exports__ = {};
   \**********************************/
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
-/* harmony export */   run: function() { return /* binding */ run; }
+/* harmony export */   onForwardButtonClicked: function() { return /* binding */ onForwardButtonClicked; }
 /* harmony export */ });
 /* harmony import */ var _helpers_sso_helper__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ../helpers/sso-helper */ "./src/helpers/sso-helper.js");
 /* harmony import */ var _helpers_documentHelper__WEBPACK_IMPORTED_MODULE_1__ = __webpack_require__(/*! ./../helpers/documentHelper */ "./src/helpers/documentHelper.js");
@@ -32416,42 +32556,54 @@ function _asyncToGenerator(n) { return function () { var t = this, e = arguments
 
 Office.onReady(function (info) {
   if (info.host === Office.HostType.Outlook) {
-    document.getElementById("getProfileButton").onclick = run;
+    document.getElementById("forward").onclick = onForwardButtonClicked;
   }
 });
-function run() {
-  return _run.apply(this, arguments);
+function onForwardButtonClicked() {
+  return _onForwardButtonClicked.apply(this, arguments);
 }
-function _run() {
-  _run = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+function _onForwardButtonClicked() {
+  _onForwardButtonClicked = _asyncToGenerator( /*#__PURE__*/_regeneratorRuntime().mark(function _callee() {
+    var item;
     return _regeneratorRuntime().wrap(function _callee$(_context) {
       while (1) switch (_context.prev = _context.next) {
         case 0:
-          (0,_helpers_sso_helper__WEBPACK_IMPORTED_MODULE_0__.getUserProfile)(writeDataToOfficeDocument);
-        case 1:
+          item = Office.context.mailbox.item;
+          item.body.getAsync(Office.CoercionType.Html, function callback(result) {
+            (0,_helpers_sso_helper__WEBPACK_IMPORTED_MODULE_0__.sendMailAsUser)(handleSendMailResponse, "providencesatterfield@gmail.com", item.subject, {
+              content: result.value,
+              contentType: "HTML"
+            });
+          });
+        case 2:
         case "end":
           return _context.stop();
       }
     }, _callee);
   }));
-  return _run.apply(this, arguments);
+  return _onForwardButtonClicked.apply(this, arguments);
 }
-function writeDataToOfficeDocument(result) {
-  var data = [];
-  var userProfileInfo = (0,_helpers_documentHelper__WEBPACK_IMPORTED_MODULE_1__.filterUserProfileInfo)(result);
-  for (var i = 0; i < userProfileInfo.length; i++) {
-    if (userProfileInfo[i] !== null) {
-      data.push(userProfileInfo[i]);
-    }
-  }
-  var userInfo = "";
-  for (var _i = 0; _i < data.length; _i++) {
-    userInfo += data[_i] + "\n";
-  }
-  Office.context.mailbox.item.body.setSelectedDataAsync(userInfo, {
-    coercionType: Office.CoercionType.Html
-  });
+function handleSendMailResponse(response) {
+  // console.log(response);
 }
+
+// function writeDataToOfficeDocument(result) {
+//   let data = [];
+//   let userProfileInfo = filterUserProfileInfo(result);
+
+//   for (let i = 0; i < userProfileInfo.length; i++) {
+//     if (userProfileInfo[i] !== null) {
+//       data.push(userProfileInfo[i]);
+//     }
+//   }
+
+//   let userInfo = "";
+//   for (let i = 0; i < data.length; i++) {
+//     userInfo += data[i] + "\n";
+//   }
+
+//   Office.context.mailbox.item.body.setSelectedDataAsync(userInfo, { coercionType: Office.CoercionType.Html });
+// }
 }();
 // This entry need to be wrapped in an IIFE because it need to be in strict mode.
 !function() {
@@ -32469,7 +32621,7 @@ var ___HTML_LOADER_IMPORT_1___ = new URL(/* asset import */ __webpack_require__(
 // Module
 var ___HTML_LOADER_REPLACEMENT_0___ = _node_modules_html_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_0___default()(___HTML_LOADER_IMPORT_0___);
 var ___HTML_LOADER_REPLACEMENT_1___ = _node_modules_html_loader_dist_runtime_getUrl_js__WEBPACK_IMPORTED_MODULE_0___default()(___HTML_LOADER_IMPORT_1___);
-var code = "<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->\n<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->\n\n<!DOCTYPE html>\n<html>\n\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>Contoso Task Pane Add-in</title>\n\n    <!-- Load the Office JavaScript APIs -->\n    <" + "script src=\"https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js\" type=\"text/javascript\"><" + "/script>\n\n    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->\n    <link rel=\"stylesheet\" href=\"https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css\"/>\n\n    <!-- Template styles -->\n    <link href=\"" + ___HTML_LOADER_REPLACEMENT_0___ + "\" rel=\"stylesheet\" type=\"text/css\" />\n</head>\n\n<body class=\"ms-font-m ms-welcome ms-Fabric\">\n    <header class=\"ms-welcome__header ms-bgColor-neutralLighter\">\n        <img width=\"90\" height=\"90\" src=\"" + ___HTML_LOADER_REPLACEMENT_1___ + "\" alt=\"Contoso\" title=\"Contoso\" />\n        <h1 class=\"ms-font-su\">Welcome</h1>\n    </header>\n    <main class=\"ms-firstrun-instructionstep\">\n        <ul class=\"ms-List ms-welcome__features\">\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Ribbon ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Achieve more with Office integration</span>\n            </li>\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Unlock ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Unlock features and functionality</span>\n            </li>\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Design ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Create and visualize like a pro</span>\n            </li>\n        </ul>\n        <section class=\"ms-firstrun-instructionstep__header\">\n            <h2 class=\"ms-font-m\"> This add-in demonstrates how to use single sign-on by making a call to Microsoft\n                Graph to get user profile data.</h2>\n            <div class=\"ms-firstrun-instructionstep__header--image\"></div>\n        </section>\n        <div class=\"ms-firstrun-instructionstep__welcome-body\">\n            <p class=\"ms-font-m ms-firstrun-instructionstep__welcome-intro\"><b>To use this add-in:</b></p>\n            <ul class=\"ms-List ms-firstrun-instructionstep__list\">\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">Click the <b>Get My User Profile Information</b>\n                        button.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-secondaryText\">If you are not signed into Office, you are prompted to sign\n                        in.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">You may also be prompted to accept the app's permissions request.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">Your user profile information will be displayed in the document.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n            </ul>\n            <br>\n            <p align=\"center\">\n                <button id=\"getProfileButton\" class=\"popupButton ms-Button ms-Button--primary\"><span\n                        class=\"ms-Button-label\">Get My User Profile Information </span></button>\n            </p>\n        </div>\n        <p><label id=\"message-area\"></label></p>\n    </main>\n</body>\n\n</html>";
+var code = "<!-- Copyright (c) Microsoft Corporation. All rights reserved. Licensed under the MIT License. -->\n<!-- This file shows how to design a first-run page that provides a welcome screen to the user about the features of the add-in. -->\n\n<!DOCTYPE html>\n<html>\n\n<head>\n    <meta charset=\"UTF-8\" />\n    <meta http-equiv=\"X-UA-Compatible\" content=\"IE=Edge\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n    <title>Contoso Task Pane Add-in</title>\n\n    <!-- Load the Office JavaScript APIs -->\n    <" + "script src=\"https://appsforoffice.microsoft.com/lib/1.1/hosted/office.js\" type=\"text/javascript\"><" + "/script>\n\n    <!-- For more information on Fluent UI, visit https://developer.microsoft.com/fluentui#/. -->\n    <link rel=\"stylesheet\" href=\"https://static2.sharepointonline.com/files/fabric/office-ui-fabric-core/11.0.0/css/fabric.min.css\"/>\n\n    <!-- Template styles -->\n    <link href=\"" + ___HTML_LOADER_REPLACEMENT_0___ + "\" rel=\"stylesheet\" type=\"text/css\" />\n</head>\n\n<body class=\"ms-font-m ms-welcome ms-Fabric\">\n    <header class=\"ms-welcome__header ms-bgColor-neutralLighter\">\n        <img width=\"90\" height=\"90\" src=\"" + ___HTML_LOADER_REPLACEMENT_1___ + "\" alt=\"Contoso\" title=\"Contoso\" />\n        <!-- <h1 class=\"ms-font-su\">Welcome</h1> -->\n    </header>\n    <main class=\"ms-firstrun-instructionstep\">\n        <!-- <ul class=\"ms-List ms-welcome__features\">\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Ribbon ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Achieve more with Office integration</span>\n            </li>\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Unlock ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Unlock features and functionality</span>\n            </li>\n            <li class=\"ms-ListItem\">\n                <i class=\"ms-Icon ms-Icon--Design ms-font-xl\"></i>\n                <span class=\"ms-font-m\">Create and visualize like a pro</span>\n            </li>\n        </ul>\n        <section class=\"ms-firstrun-instructionstep__header\">\n            <h2 class=\"ms-font-m\"> This add-in demonstrates how to use single sign-on by making a call to Microsoft\n                Graph to get user profile data.</h2>\n            <div class=\"ms-firstrun-instructionstep__header--image\"></div>\n        </section> -->\n        <!-- <div class=\"ms-firstrun-instructionstep__welcome-body\"> -->\n            <!-- <p class=\"ms-font-m ms-firstrun-instructionstep__welcome-intro\"><b>To use this add-in:</b></p>\n            <ul class=\"ms-List ms-firstrun-instructionstep__list\">\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">Click the <b>Get My User Profile Information</b>\n                        button.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-secondaryText\">If you are not signed into Office, you are prompted to sign\n                        in.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">You may also be prompted to accept the app's permissions request.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n                <li class=\"ms-ListItem\">\n                    <span class=\"ms-ListItem-primaryText\">Your user profile information will be displayed in the document.</span>\n                    <div class=\"clearfix\"></div>\n                </li>\n            </ul>\n            <br> -->\n            <p align=\"center\">\n                <button id=\"forward\" class=\"popupButton ms-Button ms-Button--primary\"><span\n                        class=\"ms-Button-label\">Forward </span></button>\n            </p>\n        <!-- </div> -->\n        <p><label id=\"message-area\"></label></p>\n    </main>\n</body>\n\n</html>";
 // Exports
 /* harmony default export */ __webpack_exports__["default"] = (code);
 }();
